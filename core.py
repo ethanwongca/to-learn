@@ -61,6 +61,10 @@ def percent(concepts):
     return round(100 * sum(c.level for c in concepts) / (5 * len(concepts))) if concepts else 0
 
 
+def due(concepts, today):
+    return [c for c in concepts if c.next <= today]
+
+
 def plural(n, word):
     return f"{n} {word}{'s' * (n != 1)}"
 
@@ -180,9 +184,8 @@ def write_topic(t, today=None):
 
 def queue(topics, today, limit=10):
     groups = {}
-    for c in all_concepts(topics):
-        if c.next <= today:
-            groups.setdefault((c.order[0], c.group), []).append(c)
+    for c in due(all_concepts(topics), today):
+        groups.setdefault((c.order[0], c.group), []).append(c)
     lists = [sorted(g, key=lambda c: (c.next, c.level, c.order)) for g in groups.values()]
     lists.sort(key=lambda g: (g[0].next, g[0].order))
     out = []
@@ -231,7 +234,7 @@ def today_text(limit=10, today=None):
 
 def list_topics_text(today=None):
     today, topics = today or date.today(), load_all()
-    lines = [f"{t.name} — {percent(t.concepts)}% — {sum(c.next <= today for c in t.concepts)} due"
+    lines = [f"{t.name} — {percent(t.concepts)}% — {len(due(t.concepts, today))} due"
              + (f" — deadline {t.deadline}" if t.deadline else "") for t in topics]
     return _warn("\n".join(lines) or "No topics yet.", topics)
 

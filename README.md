@@ -2,7 +2,7 @@
 
 A plain-text spaced-learning folder for working through books and topics: every concept, level and review date is stored in a `.txt` file you can read and edit yourself. Claude (or Codex) acts as a Socratic tutor through a tiny local MCP server, and a small local web page shows your progress and review calendar.
 
-![Screenshot placeholder](docs/screenshot.png)
+![Learn home page: today's review queue and topic progress](docs/screenshot.png)
 
 ## Quick start
 
@@ -21,7 +21,11 @@ python view.py        # open http://127.0.0.1:8765
   { "mcpServers": { "learn": { "command": "python", "args": ["mcp_server.py"] } } }
   ```
 
-  If `python` doesn't resolve to the venv's Python, set `command` to its path (for example `.venv/bin/python`, or `.venv\Scripts\python.exe` on Windows).
+  If `python` doesn't resolve to the venv's Python (`claude mcp list` shows `learn … Failed to connect`), register it for just your machine with the venv's absolute path. This overrides `.mcp.json` without changing it:
+
+  ```bash
+  claude mcp add learn --scope local -- "$PWD/.venv/bin/python" "$PWD/mcp_server.py"
+  ```
 
 - **Claude Desktop:** add the same `learn` entry to `claude_desktop_config.json`, using the absolute path to the venv's Python as `command` and the absolute path to `mcp_server.py` in `args`. Then restart Claude Desktop.
 
@@ -39,7 +43,7 @@ Ask "what's due?" → do a tutor session → levels update as you go → refresh
 
 ## Adding a book
 
-Say something like: "Add *Statistical Rethinking* ch. 1–6 as a topic." The tutor proposes an outline of general concepts, confirms it with you, and then creates the topic file.
+Say something like: "Add *Statistical Rethinking* ch. 1–6 as a topic." The tutor proposes an outline of general concepts, confirms it with you, and then creates the topic file. The **+ Add a book** button on the web page shows these steps, plus how to write the file by hand.
 
 ## File format
 
