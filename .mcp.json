@@ -1,0 +1,1 @@
+{ "mcpServers": { "learn": { "command": "python", "args": ["mcp_server.py"] } } }

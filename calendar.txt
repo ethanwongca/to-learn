@@ -1,0 +1,23 @@
+Overdue
+  Likelihood (Bayesian Inference / Probability foundations) — L2
+  Partial pooling (Bayesian Inference / Hierarchical models) — L0
+
+2026-11-19 Thu
+  Base rates (Bayesian Inference / Probability foundations) — L1
+  Grid approximation (Bayesian Inference / Posterior estimation) — L1
+  Shrinkage (Bayesian Inference / Hierarchical models) — L0
+
+2026-11-20 Fri
+  Quadratic approximation (Bayesian Inference / Posterior estimation) — L0
+
+2026-11-21 Sat
+  Bayes' rule (Bayesian Inference / Probability foundations) — L2
+
+2026-11-22 Sun
+  Posterior predictive check (Bayesian Inference / Posterior estimation) — L0
+
+2026-11-24 Tue
+  Varying intercepts (Bayesian Inference / Hierarchical models) — L0
+
+2026-11-25 Wed
+  Conditional probability (Bayesian Inference / Probability foundations) — L3
