@@ -82,4 +82,4 @@ The learning principles draw on *Make It Stick*, *Ultralearning* and *A Mind for
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
