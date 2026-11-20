@@ -104,7 +104,7 @@ class TestTools(TempRoot):
         out = core.add_concepts_text("A", "g", "Two\none\nThree\nTwo", today=TODAY)
         self.assertEqual(out, "Added 2 to A / G (2 duplicates skipped).")
         out = core.add_concepts_text("a", "New group", "Four", today=TODAY)
-        self.assertEqual(out, "Added 1 to A / New group.")
+        self.assertEqual(out, "Added 1 to A / New group. Next reading due 2026-11-26.")
         groups = core.load_all()[0].groups()
         self.assertEqual([c.name for c in groups["G"]], ["One", "Two", "Three"])
         self.assertEqual([c.name for c in groups["New group"]], ["Four"])
@@ -117,6 +117,36 @@ class TestTools(TempRoot):
         core.update_text("One", 2, note="ok", today=TODAY)
         self.assertIn("2026-11-23 Mon\n  One (A / G) — L2", cal.read_text(encoding="utf-8"))
         self.assertIn("| A | One | 0 -> 2 | ok", (core.ROOT / "log.txt").read_text(encoding="utf-8"))
+
+
+
+class TestReadingPace(TempRoot):
+    def test_add_topic_sets_next_reading_and_new_group_advances_it(self):
+        out = core.add_topic_text("Book", "[Ch. 1 · A]\nOne", today=TODAY)
+        self.assertTrue(out.endswith("Next reading due 2026-11-26."), out)
+        self.assertIn("topic: Book\nnext reading: 2026-11-26\n\n[Ch. 1 · A]", self.read("book.txt"))
+        core.add_concepts_text("Book", "Ch. 1 · A", "Two", today=TODAY + timedelta(3))  # same chapter: unchanged
+        self.assertEqual(core.load_all()[0].next_reading, date(2026, 11, 26))
+        core.add_concepts_text("Book", "Ch. 2 · B", "Three", today=TODAY + timedelta(6))  # new chapter: +7
+        self.assertEqual(core.load_all()[0].next_reading, date(2026, 12, 2))
+        core.add_concepts_text("Book", "Ch. 2 · B", "", next_reading="none", today=TODAY)
+        self.assertNotIn("next reading", self.read("book.txt"))
+        self.assertTrue(core.add_concepts_text("Book", "X", "Y", next_reading="soon").startswith("Error:"))
+
+    def test_due_reading_shows_in_today_and_calendar(self):
+        self.write("a.txt", "topic: A\nnext reading: 2026-11-19\n\n[G]\nOne | 0 | 2026-11-25\n")
+        self.assertIn("Read next: A (due 2026-11-19)", core.today_text(today=TODAY))
+        self.assertIn("2026-11-19 Thu\n  Read next: A", core.calendar_text(core.load_all(), TODAY))
+
+    def test_ics(self):
+        self.write("a.txt", "topic: A, B\nnext reading: 2026-11-25\n\n[G]\nOld | 0 | 2026-11-01\n"
+                            f"{'Long ' * 30}| 0 | 2026-11-25\n")
+        ics = core.ics_text(core.load_all(), TODAY)
+        self.assertTrue(ics.startswith("BEGIN:VCALENDAR\r\n") and ics.endswith("END:VCALENDAR\r\n"))
+        self.assertIn("DTSTART:20261119T090000", ics)  # overdue lands on today
+        self.assertIn("SUMMARY:Learn: 1 review · Read next: A\\, B", ics)
+        self.assertEqual(ics.count("BEGIN:VEVENT"), 2)
+        self.assertTrue(all(len(line.encode()) <= 75 for line in ics.split("\r\n")))
 
 
 if __name__ == "__main__":

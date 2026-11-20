@@ -37,6 +37,9 @@ class TestPages(unittest.TestCase):
         self.assertIn("Overdue", cal)
         self.assertIn("2026-11-21 Sat", cal)
 
+    def test_calendar_links_ics(self):
+        self.assertIn("href='/calendar.ics'", view.calendar_page(self.topics, TODAY))
+
     def test_add_page_and_empty_state(self):
         self.assertIn("2026-11-19", view.add_page(TODAY))
         self.assertIn("href='/add'", view.home([], TODAY))

@@ -100,3 +100,15 @@ back to the loop.
   resume
 - "resume from:" — followed by a saved state block; restore it and continue where it
   left off
+
+## Local additions (this folder; not part of the original skill)
+
+- Synthesis across topics: occasionally (about once per session, after the current
+  concept is settled) call `list_topics` and `show_topic` on another topic, then ask
+  ONE question linking the current concept to a concept from a different chapter or
+  book. Judge it like any other question. It earns no level by itself; record what
+  you learned in the `note` of the next `update`.
+- "just tell me" never counts as evidence: a question answered after "just tell me"
+  (or after you explained the answer) does not count toward the 2+ independent checks
+  needed to raise a level. Re-test that idea later from a different angle before
+  raising it, and mention "just tell me" in the `update` note.

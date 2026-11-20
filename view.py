@@ -91,10 +91,18 @@ def mastery(level):
             f'aria-valuetext="Level {level} of 5: {core.LEVELS[level]}">{segs}</div>')
 
 
-def relative(d, today):
+def when(d, today):
     n = (d - today).days
-    text = "today" if n == 0 else f"in {core.plural(n, 'day')}" if n > 0 else f"{core.plural(-n, 'day')} overdue"
-    return f"<span class='small when{' overdue' if n < 0 else ''}'>{text}</span>"
+    return "today" if n == 0 else f"in {core.plural(n, 'day')}" if n > 0 else f"{core.plural(-n, 'day')} overdue"
+
+
+def relative(d, today):
+    return f"<span class='small when{' overdue' if d < today else ''}'>{when(d, today)}</span>"
+
+
+def dates(t, today):
+    """'deadline in 3 days · next reading today' style summary of a topic's header dates."""
+    return [f"{what} {when(d, today)}" for what, d in (("next reading", t.next_reading), ("deadline", t.deadline)) if d]
 
 
 def warnings(topics):
@@ -122,11 +130,7 @@ def home(topics, today):
     out.append(f"<section class='card' aria-labelledby='up'><div class='head'><h2 id='up'>Up next</h2>{up}</section>")
     out.append("<section aria-labelledby='tp'><h2 id='tp' class='section-title'>Topics</h2>")
     for t in topics:
-        pct, meta = core.percent(t.concepts), [f"{len(core.due(t.concepts, today))} due"]
-        if t.deadline:
-            d = (t.deadline - today).days
-            meta.append("deadline today" if d == 0 else f"{core.plural(d, 'day')} to deadline" if d > 0
-                        else f"deadline passed {core.plural(-d, 'day')} ago")
+        pct, meta = core.percent(t.concepts), [f"{len(core.due(t.concepts, today))} due"] + dates(t, today)
         src = f"<p class='muted small'>{esc(t.source)}</p>" if t.source else ""
         out.append(f"<a class='card' href='/topic/{esc(t.slug)}'><div class='head'><h3>{esc(t.name)}</h3>"
                    f"<span class='pct'>{pct}%</span></div>{src}{bar(pct, t.name + ' progress')}"
@@ -139,7 +143,7 @@ def home(topics, today):
 
 def topic_page(t, today):
     pct = core.percent(t.concepts)
-    info = " · ".join(([esc(t.source)] if t.source else []) + ([f"deadline {t.deadline}"] if t.deadline else []))
+    info = " · ".join([esc(t.source)] * bool(t.source) + dates(t, today))
     out = [f"<h1>{esc(t.name)}</h1><p class='muted'>{info}</p>{bar(pct, 'Overall progress')}"
            f"<p class='small muted'>{pct}% overall</p>"]
     for g, cs in t.groups().items():
@@ -159,7 +163,9 @@ def calendar_page(topics, today):
             sections[-1][1].append(line.strip())
         elif line.strip():
             sections.append((line.strip(), []))
-    out = ["<h1>Calendar</h1>"]
+    out = ["<div class='head'><h1>Calendar</h1><a class='btn' href='/calendar.ics' download>Download .ics</a></div>",
+           "<p class='muted small'>Import into Google, Apple or Outlook Calendar to get a reminder on review days. "
+           "Re-download after sessions; dates move as you learn.</p>"]
     for head, items in sections:
         if items:
             lis = "".join(f"<li>{esc(i)}</li>" for i in items)
@@ -170,26 +176,30 @@ def calendar_page(topics, today):
 
 
 def add_page(today):
-    return f"""<h1>Add a book</h1>
-<p class="muted">Your tutor adds books for you. It proposes an outline, you confirm it, and it writes the file.</p>
+    return f"""<h1>Add a book or papers</h1>
+<p class="muted">Your tutor adds them one chapter or paper at a time. It proposes an outline, you confirm it,
+and it writes the file. The next chapter or paper is due a week later unless you name another date.</p>
 <section class="card"><ol class="steps">
 <li><strong>Open your tutor in this folder.</strong> Run <code>claude</code> here (or Codex) and approve the
 <code>learn</code> server the first time.</li>
-<li><strong>Say what you're reading.</strong> Include chapters and an optional deadline:
-<pre>Add Statistical Rethinking ch. 1-6 as a topic. Deadline 2027-02-19.</pre></li>
+<li><strong>Say what you just read.</strong> Start with one chapter, or one paper for a theme:
+<pre>Add Statistical Rethinking ch. 1 as a topic. Deadline 2027-02-19.
+Add "Attention Is All You Need" to a new topic, Transformer papers.</pre></li>
 <li><strong>Review the outline.</strong> It lists general concepts with 3-8 concepts each.
 Say yes, or ask for changes.</li>
 <li><strong>Come back here.</strong> The new topic shows up under Today. Every concept starts at level 0, due today.</li>
 </ol></section>
-<h2 class="section-title">Adding chapters later</h2>
-<pre>Add ch. 7-9 of Statistical Rethinking to Bayesian Inference.</pre>
+<h2 class="section-title">Next chapter or paper</h2>
+<p>When it's due, your tutor reminds you. Read it, then:</p>
+<pre>Add ch. 2 of Statistical Rethinking. Next one due 2026-12-10.</pre>
 <h2 class="section-title">Or write the file yourself</h2>
 <p>Create <code>topics/&lt;name&gt;.txt</code>. One concept per line: <code>name | level | next review</code>.</p>
 <pre>topic: Statistical Rethinking
-source: McElreath, ch. 1-6
+source: McElreath
 deadline: 2027-02-19
+next reading: {today}
 
-[Probability foundations]
+[Ch. 1 · Probability foundations]
 Bayes' rule             | 0 | {today}
 Conditional probability | 0 | {today}</pre>"""
 
@@ -200,6 +210,9 @@ class Handler(BaseHTTPRequestHandler):
         path = unquote(self.path.split("?")[0])
         try:
             topics = core.load_all()
+            if path == "/calendar.ics":
+                return self.send(200, core.ics_text(topics, today).encode(), "text/calendar; charset=utf-8",
+                                 {"Content-Disposition": 'attachment; filename="learn.ics"'})
             m = re.fullmatch(r"/topic/([^/]+)", path)
             t = m and next((t for t in topics if t.slug == m[1]), None)
             if path == "/":
@@ -218,12 +231,15 @@ class Handler(BaseHTTPRequestHandler):
         page = PAGE.substitute(
             title=f"({due}) Learn" if due else "Learn", css=CSS, body=body,
             nav=link("/", "Today", path) + link("/calendar", "Calendar", path),
-            add=link("/add", "+ Add a book", path, "btn")).encode()
+            add=link("/add", "+ Add reading", path, "btn")).encode()
+        self.send(status, page, "text/html; charset=utf-8")
+
+    def send(self, status, body, ctype, headers=None):
         self.send_response(status)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(page)))
+        for k, v in {"Content-Type": ctype, "Content-Length": str(len(body)), **(headers or {})}.items():
+            self.send_header(k, v)
         self.end_headers()
-        self.wfile.write(page)
+        self.wfile.write(body)
 
     def log_message(self, *args):
         pass
