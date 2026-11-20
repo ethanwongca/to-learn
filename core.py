@@ -10,6 +10,8 @@ LEVELS = ["unaware", "heard of it", "can follow along", "can do with help",
           "can do independently", "can teach it / handle edge cases"]
 DAYS = "Mon Tue Wed Thu Fri Sat Sun".split()
 READING_DAYS = 7  # default pace: next chapter/paper due this many days after one is added
+MAX_PER_GROUP = 5  # concepts per [General concept]; keeps outlines coarse
+MAX_PER_READING = 10  # concepts per add_topic outline (one chapter/paper)
 REMIND_HOUR = 9  # local start time of review events in calendar.ics
 ENC = dict(encoding="utf-8", errors="surrogateescape")
 
@@ -163,24 +165,36 @@ def all_concepts(topics):
     return [c for t in topics for c in t.concepts]
 
 
+def concept_label(c):
+    return f"{c.name} ({c.topic} / {c.group}) — L{c.level}"
+
+
+def events(topics):
+    """Sorted (date, label) for every topic's next reading and deadline."""
+    return sorted((d, f"{kind}: {t.name}") for t in topics
+                  for kind, d in (("Read next", t.next_reading), ("Deadline", t.deadline)) if d)
+
+
 def agenda(topics):
     """Sorted (date, label, is_review) for every review, next reading and deadline."""
-    items = [(c.next, c.order, f"{c.name} ({c.topic} / {c.group}) — L{c.level}", True) for c in all_concepts(topics)]
-    for ti, t in enumerate(topics):
-        items += [(d, (ti, -1), f"{kind}: {t.name}", False)
-                  for kind, d in (("Read next", t.next_reading), ("Deadline", t.deadline)) if d]
+    items = [(c.next, c.order, concept_label(c), True) for c in all_concepts(topics)]
+    items += [(d, (-1,), label, False) for d, label in events(topics)]
     return [(d, label, rev) for d, _, label, rev in sorted(items)]
 
 
+def calendar_days(topics, today, days=14):
+    """[(heading, event labels, concepts)] for Overdue then each of the next `days` days, skipping empty ones.
+    Shared by calendar.txt and the web calendar so both always agree."""
+    cs, evs = sorted(all_concepts(topics), key=lambda c: (c.next, c.order)), events(topics)
+    buckets = [("Overdue", lambda d: d < today)] + [
+        (f"{d} {DAYS[d.weekday()]}", lambda x, d=d: x == d) for d in (today + timedelta(n) for n in range(days))]
+    out = [(head, [e for d, e in evs if match(d)], [c for c in cs if match(c.next)]) for head, match in buckets]
+    return [day for day in out if day[1] or day[2]]
+
+
 def calendar_text(topics, today):
-    items = agenda(topics)
-    sections = []
-    if over := [f"  {label}" for d, label, _ in items if d < today]:
-        sections.append("Overdue\n" + "\n".join(over))
-    for n in range(14):
-        day = today + timedelta(n)
-        if lines := [f"  {label}" for d, label, _ in items if d == day]:
-            sections.append(f"{day} {DAYS[day.weekday()]}\n" + "\n".join(lines))
+    sections = [head + "".join(f"\n  {x}" for x in evs + [concept_label(c) for c in cs])
+                for head, evs, cs in calendar_days(topics, today)]
     return "\n\n".join(sections) + "\n" if sections else "Nothing scheduled in the next 14 days.\n"
 
 
@@ -255,6 +269,21 @@ def _log(text):
 
 def _clean(s):
     return " ".join(s.split())
+
+
+def _too_many(concepts, total=True):
+    """Error text if an outline is too granular, else ''."""
+    sizes = {}
+    for c in concepts:
+        sizes[c.group] = sizes.get(c.group, 0) + 1
+    big = [f"{g} ({n})" for g, n in sizes.items() if n > MAX_PER_GROUP]
+    if big:
+        return (f"Error: max {MAX_PER_GROUP} concepts per general concept: {', '.join(big)}. "
+                "Merge related ideas into broader concepts; drop worked examples, notation and minor results.")
+    if total and len(concepts) > MAX_PER_READING:
+        return (f"Error: {len(concepts)} concepts; max {MAX_PER_READING} per chapter/paper. "
+                "Keep only the big ideas worth reviewing.")
+    return ""
 
 
 def _reading(s, default):
@@ -382,6 +411,8 @@ def add_topic_text(name, outline, source="", deadline="", next_reading="", today
             t.entries.append(c)
     if not t.concepts:
         return "Error: outline has no concepts."
+    if err := _too_many(t.concepts):
+        return err
     topics_dir().mkdir(exist_ok=True)
     write_topic(t, today)
     return (f"Created topics/{slug}.txt with {plural(groups, 'general concept')}, {plural(len(t.concepts), 'concept')}."
@@ -415,6 +446,8 @@ def add_concepts_text(topic, general, concepts, next_reading="", today=None):
             continue
         existing.add(c.name.lower())
         new.append(c)
+    if new and (err := _too_many([c for c in t.concepts if c.group.lower() == general.lower()] + new, total=False)):
+        return err
     if new:
         if start is None:
             t.entries += ["", f"[{general}]"]

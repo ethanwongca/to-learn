@@ -155,44 +155,45 @@ Overall % for a topic = sum of levels / (5 × number of concepts).
 - `python view.py` serves on `http://127.0.0.1:8765` (bind to localhost only) and prints that URL.
 - Built on stdlib `http.server`. HTML comes from Python string templates with one inline `<style>` block. No JavaScript, except an optional `<meta http-equiv="refresh" content="60">`.
 - The page re-reads the txt files on every request, so changes show up right away.
+- Dev convenience: it restarts itself when `view.py` or `core.py` changes. A second `python view.py` asks the running one to quit (`POST /__quit` with header `X-Learn: quit`) and takes over the port.
 - Browser tab title: `(N) Learn` when N items are due, otherwise `Learn`. This is the "reminder".
 
 ### Pages
 
 1. **`/` Home**
    - Greeting line plus the date.
-   - **"Up next"** card: the first 5 items from `today()`, with a count ("7 due today"). Empty state: "All caught up. Next review Saturday."
+   - **"Up next"** card: the first 5 items from `today()`, with a count ("7 due today"). Each row links to its topic; the heading links to `/calendar`. Empty state: "All caught up. Next review Saturday."
    - **Topics** list: one card per topic, showing name, source, a progress bar (%), due count and days until the deadline. Each card links to its topic page.
 2. **`/topic/<slug>`**
    - Topic title, source, deadline, and an overall progress bar.
-   - One section per general concept, each with its own mini-progress.
+   - One collapsible `<details>` box per general concept, each with its own mini-progress and "N concepts · M due". Only the first box with reviews due starts open.
    - Concept rows: name, a **5-segment mastery bar** (Khan-style: filled segments = level), a level label (e.g. "can do with help") and the next review date ("today", "in 3 days", "2 days overdue").
 3. **`/calendar`**
-   - Renders `calendar.txt` content as a clean list: Overdue first, then the dated days.
+   - Same days as `calendar.txt` (`core.calendar_days`): Overdue first, then the next 14 days.
+   - One box per day with a review-count badge; readings and deadlines on top; then a collapsed box per topic ("2 groups · 6 concepts") listing its concepts under their general concept.
 
-Top nav: `Learn` (wordmark, plain text) · `Today` · `Calendar`. Nothing else.
+Top nav: striped-L logo + `Learn` · `Today` · `Calendar` · `+ Add reading`. The same logo is the favicon (inline SVG data URI).
 
 ### Design tokens
 
-The feel is calm, warm and editorial: generous whitespace, one accent color and Khan-style mastery bars. Use an original look. Don't copy logos, wordmarks or brand assets from any site.
+A warm, original 1970s-inspired look: cream paper, a dark brown header with a brown-red-orange-mustard stripe band, Khan-style mastery bars. Don't copy logos, wordmarks or brand assets from any site.
 
 ```css
---bg: #FAF9F5;        /* warm off-white */
---surface: #FFFFFF;
---text: #1F1E1D;
---muted: #6B6A65;
---border: #E8E6DC;
---accent: #C96442;    /* muted clay: buttons, links, "due" badges */
---level-0: #E8E6DC;   /* empty segment */
---level-fill: #5A7D6A;/* filled mastery segment (sage) */
---radius: 12px;
---serif: ui-serif, Georgia, "Times New Roman", serif;      /* headings */
---sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; /* body */
+--bg: #F3EAD7;  --surface: #FFF9EE;  --text: #2B1A12;  --muted: #735C48;  --border: #E2D3B8;
+--ink: #3A2418;      /* header, code blocks */
+--accent: #D9502B;  --accent-ink: #A8361A;   /* links, badges, overdue */
+--brown: #8C3B1F;  --red: #D9502B;  --orange: #EE8A2E;  --mustard: #F3B83C;
+--stripes: 4-colour band under the header;  --sunset: red→orange→mustard (progress bars)
+--level-0: #E9DCC3;  /* empty mastery segment; filled ones step brown→mustard */
+--radius: 16px;  --shadow: 5px 5px 0 var(--border);  /* flat offset shadow, no blur */
+--serif: Futura, "Avenir Next", "Century Gothic", "Trebuchet MS", sans-serif;  /* headings, buttons */
+--sans: "Avenir Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 ```
 
 - Max content width 760px, centered. Body 16px, line-height 1.6.
-- Cards: white surface, 1px border, radius 12px, 20–24px padding, no heavy shadows.
-- Headings use the serif font at regular weight (not bold).
+- Cards: surface, 1px border, radius 16px, 22px padding, flat offset shadow.
+- Buttons: uppercase pills with a hard offset shadow that presses in on click. Badges: solid rust pills.
+- Section titles get a short sunset stripe above them; code blocks are dark brown with an orange left edge.
 - Mobile: single column, which works naturally since it's already one column.
 - Accessibility: WCAG AA contrast, visible focus states, and semantic HTML (`<main>`, `<nav>`, `<section>`, `<progress>` or `role="progressbar"` with aria values).
 
@@ -206,7 +207,8 @@ You are the tutor for this folder.
 - After judging a concept, call `update(concept, level, note)`.
   Raise levels only per the skill's evaluation rules.
 - When the user adds a book or chapters, propose an outline of
-  [General concepts] with 3-8 concepts each, confirm it, then call
+  1-3 [General concepts] per chapter, 2-5 concepts each (10 max per
+  chapter; the tools reject more), confirm it, then call
   `add_topic` or `add_concepts`.
 - Never edit the txt files directly; use the tools.
 - Keep responses brief.

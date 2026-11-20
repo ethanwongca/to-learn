@@ -4,6 +4,19 @@ A plain-text spaced-learning folder for working through books and topics: every 
 
 ![Learn home page: today's review queue and topic progress](docs/screenshot.png)
 
+## The web page
+
+`python view.py` serves a read-only page at `http://127.0.0.1:8765`. It re-reads the topic files on every request, so whatever the tutor (or you) just changed shows up on refresh. The browser tab shows `(N) Learn` when N reviews are due.
+
+- **Today:** the next 5 reviews, mixed across topics and chapters, with how overdue each one is. Click a row to open its topic, or **Up next →** to open the calendar. Below that is one card per topic with overall progress, due count, next reading and deadline.
+- **Topic:** one collapsible box per chapter or paper with its own progress bar. Only the first box with reviews due starts open, so a long book reads as a short outline. Each concept has a 5-step mastery bar, a plain-English level ("can do with help") and its next review.
+- **Calendar:** one box per day for the next two weeks, overdue first. Inside each day there is a collapsed box per topic ("2 groups · 6 concepts"), so a heavy day stays readable; open it to see the concepts by chapter. Readings and deadlines are listed at the top of their day.
+- **+ Add reading:** the steps for adding the next chapter or paper.
+
+| Topic page | Calendar |
+|---|---|
+| ![Topic page: collapsible chapter boxes with mastery bars](docs/topic.png) | ![Calendar: a box per day, with a collapsible box per topic](docs/calendar.png) |
+
 ## Quick start
 
 ```bash
@@ -12,6 +25,8 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 python view.py        # open http://127.0.0.1:8765
 ```
+
+`view.py` restarts itself when you save `view.py` or `core.py`. Running it again while an old copy is up replaces that copy instead of failing with "port busy". Stop it with Ctrl+C.
 
 ## Connect an AI client (no API key)
 
@@ -43,7 +58,9 @@ Ask "what's due?" → do a tutor session → levels update as you go → refresh
 
 ## Adding a book or papers
 
-Add one chapter at a time: "Add *Statistical Rethinking* ch. 1 as a topic." The tutor proposes an outline of general concepts (named by chapter, e.g. `[Ch. 1 · Probability foundations]`), confirms it with you, and creates the topic file. The next chapter is then due a week later (`next reading:`). When it's due, `today` and the calendar say so. Read it, then say "Add ch. 2", optionally with another date ("next one due 2026-12-10"). The 7-day default is `READING_DAYS` in `core.py`.
+Add one chapter at a time: "Add *Statistical Rethinking* ch. 1 as a topic." The tutor proposes an outline of general concepts (named by chapter, e.g. `[Ch. 1 · Probability foundations]`), confirms it with you, and creates the topic file.
+
+Outlines stay coarse on purpose: 1-3 general concepts per chapter or paper, 2-5 concepts each. The tools reject more than 5 concepts in one general concept or more than 10 in one outline (`MAX_PER_GROUP` and `MAX_PER_READING` in `core.py`). A concept should be a big idea worth reviewing for weeks. Notation, worked examples and minor results go inside it. The next chapter is then due a week later (`next reading:`). When it's due, `today` and the calendar say so. Read it, then say "Add ch. 2", optionally with another date ("next one due 2026-12-10"). The 7-day default is `READING_DAYS` in `core.py`.
 
 Papers work the same way: make a topic for a theme ("Transformer papers") and add one paper at a time, each as its own general concept, e.g. `[Vaswani 2017 · Self-attention]`.
 
@@ -89,9 +106,11 @@ The Calendar page has a **Download .ics** button (also at `http://127.0.0.1:8765
 
 ## Credits
 
-Socratic Tutor skill adapted from Jane Street's skill ([janestreet/agent_skills](https://github.com/janestreet/agent_skills)); see `skills/socratic-tutor/SKILL.md`. The original text is unchanged; local additions (cross-topic synthesis, and "just tell me" never counting toward a level-up) are in its last section.
-The learning principles draw on *Make It Stick*, *Ultralearning* and *A Mind for Numbers*.
+- **Socratic Tutor skill:** adapted from Jane Street's skill in [janestreet/agent_skills](https://github.com/janestreet/agent_skills), used under the MIT License. Its copyright and license notice is kept in [`skills/socratic-tutor/LICENSE`](skills/socratic-tutor/LICENSE). The original text in `SKILL.md` is unchanged. Local additions (cross-topic synthesis, and "just tell me" never counting toward a level-up) are in its last section.
+- **Learning principles:** drawn from *Make It Stick* (Brown, Roediger & McDaniel), *Ultralearning* (Young) and *A Mind for Numbers* (Oakley).
+- **Look:** an original 1970s-inspired palette and striped "L" logo. No third-party logos, images or fonts are bundled: headings use Futura or Avenir Next when your system has them, and fall back to standard system fonts.
+- **Screenshots:** made from the bundled example topic plus a demo topic. They don't show anyone's real reading list.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). The tutor skill keeps its own MIT notice in [`skills/socratic-tutor/LICENSE`](skills/socratic-tutor/LICENSE).

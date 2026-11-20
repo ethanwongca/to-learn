@@ -3,17 +3,48 @@ source: Statistical Rethinking (McElreath), ch. 1-6
 deadline: 2027-02-19
 
 [Probability foundations]
-Bayes' rule                | 2 | 2026-11-21
-Conditional probability    | 3 | 2026-11-25
-Base rates                 | 1 | 2026-11-19
-Likelihood                 | 2 | 2026-11-18
+Bayes' rule                                | 0 | 2026-11-20
+Conditional probability                    | 0 | 2026-11-20
+Base rates                                 | 0 | 2026-11-20
+Likelihood                                 | 0 | 2026-11-20
 
 [Posterior estimation]
-Grid approximation         | 1 | 2026-11-19
-Quadratic approximation    | 0 | 2026-11-20
-Posterior predictive check | 0 | 2026-11-22
+Grid approximation                         | 0 | 2026-11-20
+Quadratic approximation                    | 0 | 2026-11-20
+Posterior predictive check                 | 0 | 2026-11-22
 
 [Hierarchical models]
-Partial pooling            | 0 | 2026-11-18
-Shrinkage                  | 0 | 2026-11-19
-Varying intercepts         | 0 | 2026-11-24
+Partial pooling                            | 0 | 2026-11-18
+Shrinkage                                  | 0 | 2026-11-19
+Varying intercepts                         | 0 | 2026-11-24
+
+[Linear models & causality]
+Gaussian linear regression                 | 0 | 2026-11-19
+Multiple regression & spurious association | 0 | 2026-11-19
+Masked relationships                       | 0 | 2026-11-19
+DAGs & confounding                         | 0 | 2026-11-19
+Collider bias                              | 0 | 2026-11-19
+Backdoor criterion                         | 0 | 2026-11-19
+
+[Overfitting & model comparison]
+Overfitting & regularizing priors          | 0 | 2026-11-19
+Information criteria (WAIC, PSIS-LOO)      | 0 | 2026-11-19
+Model comparison vs causal inference       | 0 | 2026-11-19
+
+[Interactions & MCMC]
+Interactions                               | 0 | 2026-11-19
+Metropolis & Hamiltonian Monte Carlo       | 0 | 2026-11-19
+Chain diagnostics (R-hat, n_eff)           | 0 | 2026-11-19
+
+[GLMs]
+Maximum entropy & link functions           | 0 | 2026-11-19
+Binomial/logistic regression               | 0 | 2026-11-19
+Poisson regression                         | 0 | 2026-11-19
+Ordered categorical models                 | 0 | 2026-11-19
+Zero-inflated & mixture models             | 0 | 2026-11-19
+
+[Advanced multilevel]
+Varying slopes & covariance                | 0 | 2026-11-19
+Non-centered parameterization              | 0 | 2026-11-19
+Gaussian processes                         | 0 | 2026-11-19
+Missing data & measurement error           | 0 | 2026-11-19

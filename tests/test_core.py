@@ -110,6 +110,17 @@ class TestTools(TempRoot):
         self.assertEqual([c.name for c in groups["New group"]], ["Four"])
         self.assertEqual(groups["New group"][0].next, TODAY)
 
+    def test_outlines_are_capped(self):
+        six = "\n".join("abcdef")
+        self.assertIn("max 5 concepts per general concept", core.add_topic_text("Big", "[G]\n" + six, today=TODAY))
+        eleven = "[A]\n" + "\n".join("abcde") + "\n[B]\n" + "\n".join("fghij") + "\n[C]\nk"
+        self.assertIn("max 10 per chapter", core.add_topic_text("Big", eleven, today=TODAY))
+        self.assertFalse(list(core.topics_dir().glob("big.txt")))
+        core.add_topic_text("Big", "[G]\n" + "\n".join("abcd"), today=TODAY)
+        self.assertTrue(core.add_concepts_text("Big", "G", "e", today=TODAY).startswith("Added 1"))
+        self.assertTrue(core.add_concepts_text("Big", "G", "f", today=TODAY).startswith("Error: max 5"))
+        self.assertTrue(core.add_concepts_text("Big", "G", "", next_reading="none", today=TODAY).startswith("Added 0"))
+
     def test_calendar_regenerated_after_update(self):
         self.write("a.txt", "topic: A\n\n[G]\nOne | 0 | 2026-11-19\n")
         cal = core.ROOT / "calendar.txt"

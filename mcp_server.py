@@ -53,6 +53,7 @@ def update(concept: str, level: int, note: str = "", topic: str = "") -> str:
 def add_topic(name: str, outline: str, source: str = "", deadline: str = "", next_reading: str = "") -> str:
     """Create a topic file (a book, or a theme grouping papers). outline: '[General concept]' lines, then one
     concept per line (optionally 'name | level | YYYY-MM-DD'; defaults to level 0, due today).
+    Max 5 concepts per general concept and 10 per outline; keep concepts coarse.
     next_reading: when the next chapter/paper is due (YYYY-MM-DD; default 7 days from today; 'none' to omit)."""
     return core.add_topic_text(name, outline, source, deadline, next_reading)
 
@@ -61,6 +62,7 @@ def add_topic(name: str, outline: str, source: str = "", deadline: str = "", nex
 @safe
 def add_concepts(topic: str, general: str, concepts: str, next_reading: str = "") -> str:
     """Append newline-separated concepts under a general concept (created if missing; duplicates skipped).
+    A general concept holds at most 5 concepts.
     Creating a new general concept (a new chapter/paper) moves next_reading to 7 days from today.
     next_reading: override that date (YYYY-MM-DD), or 'none' when the book/paper set is finished."""
     return core.add_concepts_text(topic, general, concepts, next_reading)

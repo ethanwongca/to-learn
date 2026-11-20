@@ -32,8 +32,14 @@ class TestPages(unittest.TestCase):
         self.assertIn("topics/t.txt:6:", h)
 
     def test_topic_and_calendar_are_fresh(self):
-        self.assertIn("in 2 days", view.topic_page(self.topics[0], TODAY))
+        page = view.topic_page(self.topics[0], TODAY)
+        self.assertIn("in 2 days", page)
+        self.assertIn("<details class='card' open>", page)  # group with due reviews starts expanded
+        self.assertIn("2 concepts · 1 due", page)
+        self.assertIn("<details class='card'><summary>", view.topic_page(self.topics[0], date(2026, 11, 1)))
         cal = view.calendar_page(self.topics, TODAY)  # no calendar.txt on disk: built from topic files
+        self.assertIn("<details class='sub'><summary><span class='chev'>T</span>", cal)  # topic sub-box inside day box
+        self.assertIn("1 group · 1 concept", cal)
         self.assertIn("Overdue", cal)
         self.assertIn("2026-11-21 Sat", cal)
 
